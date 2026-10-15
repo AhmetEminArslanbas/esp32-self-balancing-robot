@@ -140,7 +140,7 @@ R = robot.r * CM                        # wheel radius
 H, W, D = 17.0, 5.0, 11.0               # body height, length (side), depth (across) [cm]
 HALF_TRACK = TRACK * CM / 2
 
-fig2 = plt.figure(figsize=(9.6, 5.0), dpi=80)
+fig2 = plt.figure(figsize=(9.6, 5.4), dpi=80)  # 16:9, same as the other showcase images
 side = fig2.add_axes([0.01, 0.06, 0.66, 0.78])
 top = fig2.add_axes([0.70, 0.36, 0.28, 0.48])
 pad = fig2.add_axes([0.765, 0.04, 0.15, 0.27])
@@ -156,10 +156,10 @@ for xc in range(-20, 70, 10):
     side.text(xc, -3.4, f"{xc}", ha="center", fontsize=7, color=MUTED)
 side.text(66, -3.4, "cm", ha="right", fontsize=7, color=MUTED)
 side.add_patch(Polygon([[0, 0], [0, 7], [3.2, 6], [0, 5]], closed=True, color=GREEN, zorder=1))
-side.text(-1, 3.5, "başlangıç", ha="right", fontsize=8, color=GREEN)
+side.text(-4.5, 3.5, "başlangıç", ha="right", fontsize=8, color=GREEN)
 goal_flag = side.add_patch(Polygon([[40, 0], [40, 7], [43.2, 6], [40, 5]], closed=True,
                                    color=ACCENT, zorder=1, alpha=0))
-goal_txt = side.text(44, 3.5, "hedef", ha="left", fontsize=8, color=ACCENT, alpha=0)
+goal_txt = side.text(48.5, 3.5, "hedef", ha="left", fontsize=8, color=ACCENT, alpha=0)
 
 far_wheel = Ellipse((0, R), 2 * R, 2 * R, color="#334155", zorder=2)
 body = FancyBboxPatch((-W / 2, 0), W, H, boxstyle="round,pad=0,rounding_size=1.2",
