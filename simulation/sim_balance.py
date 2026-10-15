@@ -58,6 +58,9 @@ class Controller:
         self.rate_f = 0.0
         self.target = 0.0
         self.i_term = 0.0
+        # Remote drive: the controller tracks a moving position/speed setpoint (same units
+        # as x and v). Both stay 0 when the robot only holds its start point.
+        self.x_ref = self.v_ref = 0.0
 
     def step(self, acc_angle, rate, dt):
         p = self.p
@@ -74,10 +77,11 @@ class Controller:
         self.v += (self.last_u - self.v) * dt / vel_tau
         self.x += self.v * dt
         lean = p["max_lean"]
-        pos = max(-0.7 * lean, min(0.7 * lean, p["kx"] * self.x))
-        target = p["trim"] - pos - p["kv"] * self.v
+        x_err = self.x - self.x_ref
+        pos = max(-0.7 * lean, min(0.7 * lean, p["kx"] * x_err))
+        target = p["trim"] - pos - p["kv"] * (self.v - self.v_ref)
         self.target = max(p["trim"] - lean, min(p["trim"] + lean, target))
-        xl = max(-TRIM_LEARN_X_CLAMP, min(TRIM_LEARN_X_CLAMP, self.x))
+        xl = max(-TRIM_LEARN_X_CLAMP, min(TRIM_LEARN_X_CLAMP, x_err))
         p["trim"] = max(-TRIM_LIMIT, min(TRIM_LIMIT, p["trim"] - p["kxi"] * xl * dt))
         if p["d_lpf"] > 0:
             rc = 1 / (2 * math.pi * p["d_lpf"])
@@ -93,7 +97,8 @@ class Controller:
 
 
 def simulate(robot: Robot, params: dict, seconds=25.0, push_at=8.0, push_N=1.5, push_s=0.15,
-             start_tilt=1.0, seed=1, flip=None):
+             start_tilt=1.0, seed=1, flip=None, ref=None):
+    """ref(t) -> (x_ref, v_ref) moves the setpoint, as a remote drive command does."""
     rnd = random.Random(seed)
     ctrl = Controller(params)
     if flip:
@@ -120,6 +125,8 @@ def simulate(robot: Robot, params: dict, seconds=25.0, push_at=8.0, push_N=1.5, 
             acc_angle = math.degrees(th - math.atan2(a_fwd, G)) + robot.cog_offset_deg + rnd.gauss(0, 0.4)
             delay.append(math.degrees(thd) + rnd.gauss(0, 0.08) + bias)
             rate = delay.pop(0)
+            if ref:
+                ctrl.x_ref, ctrl.v_ref = ref(t)
             out = ctrl.step(acc_angle, rate, dt_ctrl + rnd.uniform(-5e-5, 5e-5))
             if out is None:
                 fell_at = t

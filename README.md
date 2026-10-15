@@ -1,29 +1,31 @@
 <div align="center">
 
-# ⚖️ ESP32 Kendi Kendini Dengeleyen Robot
+# ⚖️ ESP32 İki Tekerlekli Denge Aracı
 
-**ESP32-C3 üzerinde 500 Hz FreeRTOS kontrol döngüsü, kaskad PID, enkodersiz konum tutma, kendi kendine ayağa kalkma ve telefondan canlı ayar arayüzü**
+**İki tekerlekli aracı hem dengede hem yerinde tutan, kumandayla sürülebilen ESP32-C3 firmware'i: 500 Hz FreeRTOS kontrol döngüsü, kaskad PID, enkodersiz konum ve yön tutma, kendi kendine ayağa kalkma, telefondan canlı ayar arayüzü**
 
 ![ESP32](https://img.shields.io/badge/ESP32--C3-RISC--V-E7352C?logo=espressif&logoColor=white)
 ![FreeRTOS](https://img.shields.io/badge/FreeRTOS-500%20Hz-2ea44f)
 ![C++](https://img.shields.io/badge/C++-Arduino-00599C?logo=cplusplus&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-sim%C3%BClasyon-3776AB?logo=python&logoColor=white)
 
-<img src="docs/images/push_recovery.gif" width="640" alt="İtme sonrası toparlanma simülasyonu">
+<img src="docs/images/push_recovery.gif" width="760" alt="İki tekerlekli denge aracı: itmeye toparlanma, kumandayla sürüş ve dönüş">
 
-<sub>Fizik simülasyonu: robot 0,4 m/s'lik bir darbeyle itiliyor, devrilmeden toparlanıyor ve başladığı noktaya geri dönüyor.</sub>
+<sub>Fizik simülasyonu, firmware'deki kontrol yasasıyla: araç yerinde dururken 0,4 m/s'lik bir darbeyle itiliyor, devrilmeden toparlanıp başladığı noktaya dönüyor; sonra kumandayla 40 cm ileri gidiyor, yerinde 180° dönüyor, geri gelip başladığı yerde ve aynı yönde duruyor.</sub>
 
 </div>
 
 ## Proje hakkında
-İki tekerlekli ve enkodersiz, ucuz DC motorlu bir robotu dengede tutmak için firmware'i sıfırdan yazdım. Hedefler şunlardı:
-- dengede kalmak,
-- itildiğinde toparlanmak,
-- **başladığı yerde ve aynı yönde durmak**.
+İki tekerlekli, enkodersiz ve ucuz DC motorlu bir aracın firmware'ini sıfırdan yazdım. Araç tek aks üzerinde duruyor; devrilmemek için tekerleklerini sürekli gövdenin altına doğru sürüyor. Hedefler şunlardı:
+- dengede kalmak ve itildiğinde toparlanmak,
+- kendi haline bırakıldığında **başladığı yerde ve aynı yönde durmak** (konum + yön tutma),
+- kumandayla ileri/geri sürülebilmek ve yerinde dönebilmek; komut bitince yeni yerinde aynı şekilde durmak.
+
+Sürüş, denetleyicinin konum/hız hedefini kaydırarak, dönüş ise yön tutma hedefini değiştirerek yapılıyor; denge döngüsü her durumda devrede kalıyor. Aracın ilk sürümünü Unity ile yazdığım bir kumanda uygulamasıyla (klavye → Wi-Fi/TCP) sürüyordum.
 
 Enkoder olmadığı için konum doğrudan ölçülemiyor. Bunun yerine motor komutundan hız ve konum tahmin edip dış döngüde kullandım.
 
-Denetleyiciyi gerçek robota yüklemeden önce bir **fizik simülasyonunda** (tekerlekli ters sarkaç + DC motor modeli) doğruladım. Simülasyondaki denetleyici, firmware'deki kontrol yasasının birebir Python karşılığıdır.
+Denetleyiciyi gerçek robota yüklemeden önce bir **fizik simülasyonunda** (iki tekerlekli aracın gövde + tekerlek dinamiği ve DC motor modeli) doğruladım. Simülasyondaki denetleyici, firmware'deki kontrol yasasının birebir Python karşılığıdır.
 
 ## Özellikler
 - **500 Hz kontrol döngüsü:** Yüksek öncelikli bir FreeRTOS görevi olarak çalışır. Döngü süresi ve en kötü durum gecikmesi (`dt_max`) sürekli izlenir.
@@ -62,12 +64,12 @@ flowchart LR
 ```
 
 ## Simülasyon
-<img src="docs/images/push_recovery.png" width="720" alt="Eğim, konum ve motor çıkışı grafikleri">
+<img src="docs/images/push_recovery.png" width="720" alt="Eğim, konum, yön ve motor çıkışı grafikleri">
 
 ```bash
 cd simulation
 python sim_balance.py   # 3 farklı robot modeli × 3 itme senaryosu, hepsi OK olmalı
-python animate.py       # push_recovery.gif + push_recovery.png üretir (matplotlib)
+python animate.py       # denge + kumanda senaryosu: push_recovery.gif + push_recovery.png (matplotlib)
 python web_demo.py      # web arayüzünü simüle edilmiş telemetriyle açar → http://127.0.0.1:8080
 ```
 
@@ -80,7 +82,7 @@ python web_demo.py      # web arayüzünü simüle edilmiş telemetriyle açar �
 - [`firmware/Imu.ino`](firmware/Imu.ino): register seviyesinde IMU sürücüsü, kalibrasyon, tamamlayıcı filtre.
 - [`firmware/Motors.ino`](firmware/Motors.ino): LEDC PWM, ölü bölge ve slow-decay sürüş.
 - [`firmware/Params.ino`](firmware/Params.ino): parametre tablosu ve NVS kalıcılığı.
-- [`simulation/sim_balance.py`](simulation/sim_balance.py): Lagrange denklemleriyle tekerlekli ters sarkaç simülasyonu.
+- [`simulation/sim_balance.py`](simulation/sim_balance.py): Lagrange denklemleriyle iki tekerlekli araç simülasyonu (kumanda hedefi girişiyle).
 
 ## Neler öğrendim
 - Kontrol tasarımını önce simülasyonda doğrulayıp sonra donanıma taşımak.
